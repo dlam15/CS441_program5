@@ -41,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar speed;
     private Spinner lang;
 
-
     private String filename = "/data/data/com.example.myapi/files/words.wav";
     private String utterance = "key";
     private File file;
@@ -51,6 +50,13 @@ public class MainActivity extends AppCompatActivity {
     private Visualizer visualizer;
     private int choice;
     private ArrayList<Locale> languages;
+
+    /*Code based on
+      Text-to-speech:
+        https://www.youtube.com/watch?v=DoYnz0GYN1w
+      Visualizer:
+        http://android-er.blogspot.com/2015/02/create-audio-visualizer-for-mediaplayer.html
+    */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,9 +70,8 @@ public class MainActivity extends AppCompatActivity {
         pitch = (SeekBar) findViewById(R.id.seekBar);
         speed = (SeekBar) findViewById(R.id.seekBar2);
 
+        //Internal file
         file = new File(filename);
-        file.setReadable(true,false);
-
 
         ttspeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
@@ -92,23 +97,19 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 synthesize();
 
-                //used to hide the keyboard
+                //Used to hide the keyboard
+                //https://stackoverflow.com/questions/1109022/how-do-you-close-hide-the-android-soft-keyboard-using-java
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(editText.getWindowToken(),0);
-
-
             }
         });
 
 
-
         //https://developer.android.com/guide/topics/ui/controls/spinner
-        //https://stackoverflow.com/questions/9476665/how-to-change-spinner-text-size-and-text-color
         lang = (Spinner) findViewById(R.id.spinner);
         lang.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                //((TextView) parent.getChildAt(0)).setTextSize(20);
                 choice = position;
             }
 
@@ -118,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //Voices based on phone's google text-to-speech (may be able to get other voices using Locale)
         languages = new ArrayList<>();
         languages.add(Locale.CHINESE);
         languages.add(Locale.ENGLISH);
@@ -151,8 +153,6 @@ public class MainActivity extends AppCompatActivity {
                 lang.setSelection(1);
                 pitch.setProgress(50);
                 speed.setProgress(50);
-
-
             }
         });
 
@@ -161,13 +161,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void synthesize(){
         text = editText.getText().toString();
+
+        //Set the pitch, speed, and voice based on user
         float pitchVal = (float) pitch.getProgress() / 50;
         if(pitchVal < 0.1) pitchVal = 0.1f;
         float speedVal = (float) speed.getProgress() / 50;
         if(speedVal < 0.1) speedVal = 0.1f;
         ttspeech.setPitch(pitchVal);
         ttspeech.setSpeechRate(speedVal);
-
         int lang = ttspeech.setLanguage(languages.get(choice));
 
         if(lang == TextToSpeech.LANG_NOT_SUPPORTED || lang == TextToSpeech.LANG_MISSING_DATA){
@@ -178,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         //Needed to be able to write synthesized speech to file
+        //https://stackoverflow.com/questions/34562771/how-to-save-audio-file-from-speech-synthesizer-in-android-android-speech-tts
         HashMap<String,String> test = new HashMap<>();
         test.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utterance);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -193,11 +195,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDone(String utteranceId){
                 if (utteranceId.equals(utterance))
-                    try {
-                        speak();
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
+                    speak();
             }
 
             @Override
@@ -211,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void speak() throws IOException {
+    private void speak() {
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         mp = MediaPlayer.create(this, Uri.fromFile(file));
 
@@ -228,7 +226,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupVisualizer() {
 
-        //needed for the visualizer (make sure that you have the needed permissions)
+        //Needed for the visualizer (make sure that you have the needed permissions)
+        //https://android.wekeepcoding.com/article/10668163/java.lang.RuntimeException%3A+Cannot+initialize+Visualizer+engine%2C+error%3A+-4
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             int hasAudioPermission = checkSelfPermission(Manifest.permission.RECORD_AUDIO);
             int hasInternetPermission = checkSelfPermission(Manifest.permission.INTERNET);
@@ -242,7 +241,9 @@ public class MainActivity extends AppCompatActivity {
                 permissions.add(Manifest.permission.INTERNET);
             }
             if (!permissions.isEmpty()) {
-                requestPermissions(permissions.toArray(new String[permissions.size()]),0); //Can pass any request code (just an identifier for the request)
+                //Can pass any request code (just an identifier for the request)
+                //https://stackoverflow.com/questions/44309857/request-code-for-permissions-in-android
+                requestPermissions(permissions.toArray(new String[permissions.size()]),0);
             }
         }
 
