@@ -7,7 +7,7 @@ menu allow the user to adjust the pitch, sound, and even the voice of
 the audio. For the voice, even though there are various languages
 listed it does not translate the text to the specified language (except
 for numbers); it instead just says the text that is written and so
-the audio may have have an accent depending on the voice chosen.
+the audio may have an accent depending on the voice chosen.
 
 
 ## References:  
